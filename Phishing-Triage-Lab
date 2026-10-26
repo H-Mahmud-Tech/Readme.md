@@ -1,70 +1,27 @@
-# 📧 Phishing Triage & Incident Response Investigation Lab
+# 🔍 Microsoft Sentinel KQL Threat Hunting & Analytics Lab
 
 ## 🎯 Overview & Objective
-This project demonstrates an end-to-end Tier 1 Security Operations Center (SOC) incident response workflow for investigating suspicious inbound emails. Following the **NIST SP 800-61** Incident Response Lifecycle, this lab covers email header dissection, Indicator of Compromise (IOC) extraction and enrichment, sandbox payload dynamic analysis, and incident reporting.
+This project demonstrates hands-on cloud SIEM log analysis using **Microsoft Sentinel**. It features custom **Kusto Query Language (KQL)** hunting queries designed to detect brute-force authentication attacks, suspicious process execution, and unauthorized access anomalies in enterprise hybrid environments.
 
 ---
 
 ## 🛠️ Tools & Technologies Used
-* **Email Analysis:** Header Analysis (SPF, DKIM, DMARC validation)
-* **Threat Intelligence & Enrichment:** VirusTotal, URLScan.io, AbuseIPDB
-* **Sandboxing:** Any.Run / Hybrid Analysis
-* **Frameworks:** NIST SP 800-61, MITRE ATT&CK Framework
-* **Ticketing & Escalation:** ServiceNow / Jira Service Desk
+* **SIEM Platform:** Microsoft Sentinel (Azure Log Analytics Workspace)
+* **Query Language:** KQL (Kusto Query Language)
+* **Telemetry Sources:** Windows Security Events, Azure Sign-In Logs, Sysmon
+* **Frameworks:** MITRE ATT&CK Framework
 
 ---
 
-## 📋 Step-by-Step Investigation Workflow
+## 📋 KQL Hunting Queries & Case Studies
 
-### 1. Initial Alert & Triage (Preparation & Detection)
-* Received a suspicious user-reported email with the subject line: `Urgent: Account Verification Required`.
-* Extracted the raw email file (`.eml`) and initiated triage following the **CIA Triad** and **NIST SP 800-61** guidelines.
-
----
-
-### 2. Email Header Analysis
-Analyzed raw email headers to verify authentication controls:
-* **SPF (Sender Policy Framework):** `FAIL` (Sender IP did not match authorized domain sending servers)
-* **DKIM (DomainKeys Identified Mail):** `FAIL` / `NEUTRAL` (Signature validation failed)
-* **DMARC (Domain-based Message Authentication, Reporting, and Conformance):** `FAIL` (Policy enforced rejection/quarantine)
-* **Sender Address vs. Return-Path:** Identified mismatched `From:` field spoofing an enterprise brand.
-
----
-
-### 3. Indicator of Compromise (IOC) Enrichment
-Extracted embedded URLs, domains, and IP addresses from the message body and enriched them across threat intelligence databases:
-
-| IOC Type | Value / Indicator | Tool Used | Finding / Reputation Score |
-| :--- | :--- | :--- | :--- |
-| **Sender IP** | `192.0.2.45` | AbuseIPDB | High Confidence Malicious (88%) |
-| **Phishing URL** | `http://malicious-login-portal.com` | URLScan.io | Credential Harvesting Landing Page |
-| **Attachment Hash (SHA-256)** | `e3b0c44298fc1c149afbf4c8996fb924...` | VirusTotal | 42/72 Security Vendors Flagged Malicious |
-
----
-
-### 4. Dynamic Sandbox Behavior Analysis
-* Uploaded unknown payload / link to **Any.Run** sandbox.
-* Observed process spawn tree: `WINWORD.EXE` → `cmd.exe` → `powershell.exe` downloading an external script.
-* Identified outbound Command & Control (C2) communication attempts.
-
----
-
-### 5. MITRE ATT&CK Mapping
-
-| Tactic | Technique ID | Technique Name |
-| :--- | :--- | :--- |
-| **Initial Access** | `T1566.001` | Phishing: Spearphishing Attachment |
-| **Execution** | `T1059.001` | Command and Scripting Interpreter: PowerShell |
-| **Defense Evasion** | `T1027` | Obfuscated Files or Information |
-
----
-
-### 6. Containment, Eradication & Remediation
-* **Endpoint Isolation:** Recommended host isolation via Cisco Secure Endpoint (AMP) for affected workstations.
-* **Block Rules:** Added malicious IP and domain IOCs to edge firewall and gateway blocklists.
-* **User Session:** Revoked session tokens and forced password reset for impacted user accounts via Active Directory.
-
----
-
-## 📝 Summary & Key Takeaways
-Documented all findings, remediation steps, and root-cause analysis (RCA) in **ServiceNow** for Tier 2 escalation and enterprise audit compliance.# Readme.md
+### 1. Brute-Force Authentication Detection (Event ID 4625)
+* **Objective:** Detect multiple failed logon attempts followed by a successful login from the same external IP address, indicating potential credential stuffing or brute-force activity.
+* **KQL Query:**
+```kusto
+SecurityEvent
+| where TimeGenerated > ago(24h)
+| where EventID == 4625 // Failed Logon
+| summarize FailedLogons=count(), TargetAccounts=make_set(Account) by IpAddress
+| where FailedLogons > 10
+| sort by FailedLogons desc
