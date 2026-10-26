@@ -1,0 +1,9 @@
+Objective: Hunt for encoded or anomalous PowerShell command-line activity associated with post-exploitation and payload download.
+KQL Query: 
+SecurityEvent
+| where TimeGenerated > ago(7d)
+| where EventID == 4688 // New Process Created
+| where Process has "powershell.exe"
+| where CommandLine has_any ("-enc", "-encodedcommand", "downloadstring", "iex")
+| project TimeGenerated, Computer, Account, CommandLine
+Analysis & Triage: Mapped execution behaviors to MITRE ATT&CK Technique T1059.001 (Command and Scripting Interpreter: PowerShell).
