@@ -1,0 +1,15 @@
+Objective: Showcase packet-level analysis and identification of malicious network traffic (such as command and control callbacks or scanning activity).
+
+What to include in your README:
+
+Tools Used: Wireshark, TCPDump.
+
+Scenario: Analyzed a capture file (.pcap) of an infected host.
+
+Key Findings documented in your README:
+
+Identified suspicious HTTP GET requests pulling an executable payload from an external IP address.
+
+Tracked internal host scanning behavior (port scanning) prior to exploitation.
+
+Captured clear-text credential transmission vulnerabilities.
