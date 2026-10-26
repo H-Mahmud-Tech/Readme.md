@@ -1,9 +1,0 @@
-Description: A collection of custom KQL detection and hunting queries developed to surface anomalous behavior in enterprise environments.
-this is a sample of a brute force detection
-
-SecurityEvent
-| where TimeGenerated > ago(24h)
-| where EventID == 4625 // Failed Logon
-| summarize FailedLogons=count() by Account, IpAddress
-| where FailedLogons > 10
-| sort by FailedLogons desc
